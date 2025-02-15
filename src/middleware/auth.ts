@@ -12,19 +12,23 @@ dotenv.config();
  export const auth = async(req:AuthRequest,res:Response,next:NextFunction)=>{
     try {
         
-        const token = req.headers['x-auth-token'];
+        const token = req.headers['x-auth-token'] as string;
         if(!token){
             res.status(401).json({message:"Token is missing! access denied"});
             return;
         }
-        console.log("middleware",token,process.env.SECRET);
-        const verified = jwt.verify(token as string,process.env.SECRET_KEY!);
+        const secretKey = process.env.SECRET_KEY;
+        
+        if (!secretKey) {
+            throw new Error("Key Access Error");
+        }
+        const verified = jwt.verify(token,secretKey);
+        console.log(verified);
         if (!verified) {
             throw new Error("Invalid or expired token");
         }
-        
         const verifiedData = verified as {id:UUID,email:string};
-
+            
             const [user] = await db.select().from(users).where(eq(users.id,verifiedData.id));
             if (!user) {
                 res.status(404).json({ message: "User not found" });

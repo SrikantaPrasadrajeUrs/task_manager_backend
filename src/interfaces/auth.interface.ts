@@ -17,4 +17,9 @@ interface AuthRequest extends Request{
     token?:string;
 }
 
-export {SignUpBody, LoginBody, AuthRequest};
+interface VerifyRequest extends Request{
+    headers:{
+        "x-auth-token": string;
+    }& Request['headers'];
+}
+export {SignUpBody, LoginBody, AuthRequest, VerifyRequest};

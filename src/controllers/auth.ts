@@ -1,5 +1,5 @@
-import { Request, Response, Router } from "express";
-import { SignUpBody,LoginBody } from "../interfaces";
+import { NextFunction, Request, Response, Router } from "express";
+import { SignUpBody,LoginBody, VerifyRequest } from "../interfaces";
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { users , NewUser, User, refreshTokenTables } from "../db/schema";
@@ -85,11 +85,41 @@ const loginUser = async (req:Request<{},{},LoginBody>,res:Response)=>{
             await db.delete(refreshTokenTables).where(eq(refreshTokenTables.userId,existingUser.id));
            }
            await db.insert(refreshTokenTables).values({userId:existingUser.id,token:refreshToken});
-           res.json({message:"Login successful",...removePassword(existingUser),refreshToken,accessToken});
+           res.json({message:"Login successful",userData:{...removePassword(existingUser),refreshToken,accessToken}});
     } catch (error) {
        res.status(500).json({error: error}); 
     }
 }
 
 
-export {signUpUser, loginUser};
+const tokenIsValid = async (req:Request,res:Response)=>{
+    try {
+        const token = req.headers["x-auth-token"] as string|undefined;
+    if (!token) {
+     res.status(401).json({ message: "No token provided" });
+     return;
+    }
+    const refreshKey = process.env.REFRESH_KEY;
+    const secretKey = process.env.SECRET_KEY;
+    if (!refreshKey||!secretKey) {
+        throw new Error("Key Access Error");
+    }
+    const isVerified = jwt.verify(token,refreshKey);
+    if(!isVerified){
+         res.status(498).json({ message: "Invalid Token" });
+         return;
+    }
+    const {id,email} = isVerified as {id:string,email:string};
+    const [user] = await db.select().from(users).where(eq(users.id,id));
+    if(!user){
+         res.status(401).json({message:"User not found"});
+         return;
+    }
+    const accessToken = generateAccessToken(id,email,secretKey);
+    res.status(200).json({message:"Valid token",userData:{...removePassword(user),accessToken}})
+    } catch (error) {
+        res.status(500).json({message:"Some error Occurred"});
+    }
+};
+
+export {signUpUser,tokenIsValid,loginUser};
