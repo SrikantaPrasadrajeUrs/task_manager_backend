@@ -116,9 +116,9 @@ const tokenIsValid = async (req:Request,res:Response)=>{
          return;
     }
     const accessToken = generateAccessToken(id,email,secretKey);
-    res.status(200).json({message:"Valid token",userData:{...removePassword(user),accessToken}})
+    res.status(200).json({message:"Valid token",userData:{...removePassword(user),accessToken,refreshToken:token}})
     } catch (error) {
-        res.status(500).json({message:"Some error Occurred"});
+        res.status(500).json({message:error instanceof Error? error.message: "Some error Occurred"});
     }
 };
 

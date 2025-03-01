@@ -23,7 +23,6 @@ dotenv.config();
             throw new Error("Key Access Error");
         }
         const verified = jwt.verify(token,secretKey);
-        console.log(verified);
         if (!verified) {
             throw new Error("Invalid or expired token");
         }
