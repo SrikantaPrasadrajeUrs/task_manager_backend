@@ -37,6 +37,6 @@ dotenv.config();
             req.token = token as string;
             next();
     } catch (error) {
-        res.status(403).json({message:error instanceof Error? error.stack:"Authentication Error"});
+        res.status(403).json({message:error instanceof Error? error.message:"Authentication Error"});
     }
 }
